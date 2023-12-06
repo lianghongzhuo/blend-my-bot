@@ -85,8 +85,11 @@ class ModelImporter:
         )
         for link_id in range(model_geometry.getNrOfLinks()):
             link_name = model_geometry.getLinkName(link_id)
-            link_visual = visuals[link_id][0]
-            if link_visual.isExternalMesh():
+            try:
+                link_visual = visuals[link_id][0]
+            except IndexError:
+                link_visual = None
+            if link_visual is not None and link_visual.isExternalMesh():
                 mesh_path = (
                     link_visual.asExternalMesh().getFileLocationOnLocalFileSystem()
                 )
@@ -98,6 +101,9 @@ class ModelImporter:
                 elif mesh_path.endswith(".obj"):
                     print(f"Importing {mesh_path}")
                     bpy.ops.import_scene.obj(filepath=mesh_path)
+                    if len(bpy.context.selected_objects) > 1:
+                        bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
+                        bpy.ops.object.join()
                     mesh = bpy.context.selected_objects[0]
                 elif mesh_path.endswith(".stl"):
                     print(f"Importing {mesh_path}")
