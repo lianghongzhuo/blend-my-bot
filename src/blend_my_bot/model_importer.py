@@ -85,11 +85,10 @@ class ModelImporter:
         )
         for link_id in range(model_geometry.getNrOfLinks()):
             link_name = model_geometry.getLinkName(link_id)
-            try:
-                link_visual = visuals[link_id][0]
-            except IndexError:
-                link_visual = None
-            if link_visual is not None and link_visual.isExternalMesh():
+            if len(visuals[link_id]) == 0:
+                continue
+            link_visual = visuals[link_id][0]
+            if link_visual.isExternalMesh():
                 mesh_path = (
                     link_visual.asExternalMesh().getFileLocationOnLocalFileSystem()
                 )
@@ -115,6 +114,25 @@ class ModelImporter:
                     )
                 mesh.name = mesh_name
                 mesh.scale = link_visual.asExternalMesh().getScale().toNumPy().flatten()
+                mesh.rotation_mode = "QUATERNION"
+                l_H_g = link_visual.getLink_H_geometry()
+                # set link pose to rest position
+                w_H_l = kindyn.getWorldTransform(link_name)
+                w_H_g = w_H_l * l_H_g
+                mesh.location = w_H_g.getPosition()
+                mesh.rotation_quaternion = w_H_g.getRotation().asQuaternion()
+                links[link_name] = Link(link_name, mesh, l_H_g)
+            elif link_visual.isBox():
+                if link_visual.asBox().getX() == 0:
+                    continue
+                bpy.ops.mesh.primitive_cube_add()
+                mesh = bpy.context.selected_objects[0]
+                mesh.scale = (
+                    link_visual.asBox().getX()/2,
+                    link_visual.asBox().getY()/2,
+                    link_visual.asBox().getZ()/2
+                )
+                mesh.name = f"{model_name}_{link_name}_mesh"
                 mesh.rotation_mode = "QUATERNION"
                 l_H_g = link_visual.getLink_H_geometry()
                 # set link pose to rest position
