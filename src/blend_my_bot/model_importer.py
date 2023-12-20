@@ -113,14 +113,6 @@ class ModelImporter:
                         )
                     mesh.name = mesh_name
                     mesh.scale = link_visual.asExternalMesh().getScale().toNumPy().flatten()
-                    mesh.rotation_mode = "QUATERNION"
-                    l_H_g = link_visual.getLink_H_geometry()
-                    # set link pose to rest position
-                    w_H_l = kindyn.getWorldTransform(link_name)
-                    w_H_g = w_H_l * l_H_g
-                    mesh.location = w_H_g.getPosition()
-                    mesh.rotation_quaternion = w_H_g.getRotation().asQuaternion()
-                    links[link_name] = Link(link_name, mesh, l_H_g)
                 elif link_visual.isBox():
                     if link_visual.asBox().getX() == 0:
                         continue
@@ -132,12 +124,14 @@ class ModelImporter:
                         link_visual.asBox().getZ()/2
                     )
                     mesh.name = f"{model_name}_{link_name}_mesh"
-                    mesh.rotation_mode = "QUATERNION"
-                    l_H_g = link_visual.getLink_H_geometry()
-                    # set link pose to rest position
-                    w_H_l = kindyn.getWorldTransform(link_name)
-                    w_H_g = w_H_l * l_H_g
-                    mesh.location = w_H_g.getPosition()
-                    mesh.rotation_quaternion = w_H_g.getRotation().asQuaternion()
-                    links[link_name] = Link(link_name, mesh, l_H_g)
+                else:
+                    raise NotImplementedError
+                mesh.rotation_mode = "QUATERNION"
+                l_H_g = link_visual.getLink_H_geometry()
+                # set link pose to rest position
+                w_H_l = kindyn.getWorldTransform(link_name)
+                w_H_g = w_H_l * l_H_g
+                mesh.location = w_H_g.getPosition()
+                mesh.rotation_quaternion = w_H_g.getRotation().asQuaternion()
+                links[f"{link_name}_{i}"] = Link(link_name, mesh, l_H_g)
         return links
