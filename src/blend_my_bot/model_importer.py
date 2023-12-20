@@ -85,60 +85,59 @@ class ModelImporter:
         )
         for link_id in range(model_geometry.getNrOfLinks()):
             link_name = model_geometry.getLinkName(link_id)
-            if len(visuals[link_id]) == 0:
-                continue
-            link_visual = visuals[link_id][0]
-            if link_visual.isExternalMesh():
-                mesh_path = (
-                    link_visual.asExternalMesh().getFileLocationOnLocalFileSystem()
-                )
-                print(f"mesh_path {mesh_path}")
-                mesh_name = f"{model_name}_{link_name}_mesh"
-                if mesh_name in existing_objects:
-                    print(f"Using existing mesh {mesh_name}")
-                    mesh = bpy.data.objects[mesh_name]
-                elif mesh_path.endswith(".obj"):
-                    print(f"Importing {mesh_path}")
-                    bpy.ops.import_scene.obj(filepath=mesh_path)
-                    if len(bpy.context.selected_objects) > 1:
-                        bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
-                        bpy.ops.object.join()
-                    mesh = bpy.context.selected_objects[0]
-                elif mesh_path.endswith(".stl"):
-                    print(f"Importing {mesh_path}")
-                    bpy.ops.import_mesh.stl(filepath=mesh_path)
-                    mesh = bpy.context.selected_objects[0]
-                else:
-                    raise ValueError(
-                        f"Extension {mesh_path.split('.')[-1]} not supported"
+            link_visuals = visuals[link_id]
+            for i, link_visual in enumerate(link_visuals):
+                if link_visual.isExternalMesh():
+                    mesh_path = (
+                        link_visual.asExternalMesh().getFileLocationOnLocalFileSystem()
                     )
-                mesh.name = mesh_name
-                mesh.scale = link_visual.asExternalMesh().getScale().toNumPy().flatten()
-                mesh.rotation_mode = "QUATERNION"
-                l_H_g = link_visual.getLink_H_geometry()
-                # set link pose to rest position
-                w_H_l = kindyn.getWorldTransform(link_name)
-                w_H_g = w_H_l * l_H_g
-                mesh.location = w_H_g.getPosition()
-                mesh.rotation_quaternion = w_H_g.getRotation().asQuaternion()
-                links[link_name] = Link(link_name, mesh, l_H_g)
-            elif link_visual.isBox():
-                if link_visual.asBox().getX() == 0:
-                    continue
-                bpy.ops.mesh.primitive_cube_add()
-                mesh = bpy.context.selected_objects[0]
-                mesh.scale = (
-                    link_visual.asBox().getX()/2,
-                    link_visual.asBox().getY()/2,
-                    link_visual.asBox().getZ()/2
-                )
-                mesh.name = f"{model_name}_{link_name}_mesh"
-                mesh.rotation_mode = "QUATERNION"
-                l_H_g = link_visual.getLink_H_geometry()
-                # set link pose to rest position
-                w_H_l = kindyn.getWorldTransform(link_name)
-                w_H_g = w_H_l * l_H_g
-                mesh.location = w_H_g.getPosition()
-                mesh.rotation_quaternion = w_H_g.getRotation().asQuaternion()
-                links[link_name] = Link(link_name, mesh, l_H_g)
+                    print(f"mesh_path {mesh_path}")
+                    mesh_name = f"{model_name}_{link_name}_mesh_{i}"
+                    if mesh_name in existing_objects:
+                        print(f"Using existing mesh {mesh_name}")
+                        mesh = bpy.data.objects[mesh_name]
+                    elif mesh_path.endswith(".obj"):
+                        print(f"Importing {mesh_path}")
+                        bpy.ops.import_scene.obj(filepath=mesh_path)
+                        if len(bpy.context.selected_objects) > 1:
+                            bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
+                            bpy.ops.object.join()
+                        mesh = bpy.context.selected_objects[0]
+                    elif mesh_path.endswith(".stl"):
+                        print(f"Importing {mesh_path}")
+                        bpy.ops.import_mesh.stl(filepath=mesh_path)
+                        mesh = bpy.context.selected_objects[0]
+                    else:
+                        raise ValueError(
+                            f"Extension {mesh_path.split('.')[-1]} not supported"
+                        )
+                    mesh.name = mesh_name
+                    mesh.scale = link_visual.asExternalMesh().getScale().toNumPy().flatten()
+                    mesh.rotation_mode = "QUATERNION"
+                    l_H_g = link_visual.getLink_H_geometry()
+                    # set link pose to rest position
+                    w_H_l = kindyn.getWorldTransform(link_name)
+                    w_H_g = w_H_l * l_H_g
+                    mesh.location = w_H_g.getPosition()
+                    mesh.rotation_quaternion = w_H_g.getRotation().asQuaternion()
+                    links[link_name] = Link(link_name, mesh, l_H_g)
+                elif link_visual.isBox():
+                    if link_visual.asBox().getX() == 0:
+                        continue
+                    bpy.ops.mesh.primitive_cube_add()
+                    mesh = bpy.context.selected_objects[0]
+                    mesh.scale = (
+                        link_visual.asBox().getX()/2,
+                        link_visual.asBox().getY()/2,
+                        link_visual.asBox().getZ()/2
+                    )
+                    mesh.name = f"{model_name}_{link_name}_mesh"
+                    mesh.rotation_mode = "QUATERNION"
+                    l_H_g = link_visual.getLink_H_geometry()
+                    # set link pose to rest position
+                    w_H_l = kindyn.getWorldTransform(link_name)
+                    w_H_g = w_H_l * l_H_g
+                    mesh.location = w_H_g.getPosition()
+                    mesh.rotation_quaternion = w_H_g.getRotation().asQuaternion()
+                    links[link_name] = Link(link_name, mesh, l_H_g)
         return links
